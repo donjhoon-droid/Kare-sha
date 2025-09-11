@@ -770,42 +770,102 @@
             </div>
         </div>
     </div>
-
+<!-- REEMPLAZAR TU SCRIPT ACTUAL POR ESTE CÓDIGO COMPLETO -->
     <script>
-        // === VARIABLES DEL SLIDER ===
+        // ========================================
+        // VARIABLES DEL SLIDER CON PERSISTENCIA
+        // ========================================
         let fotoActual = 0;
         let fotosGaleria = [];
         
-        // === CONTROL DE MÚSICA ===
-        let musicaReproduciendo = false;
-        const audio = document.getElementById('background-audio');
-        const musicBtn = document.getElementById('music-btn');
+        // Clave única para almacenamiento (cambiar por cada cliente)
+        const STORAGE_KEY = 'karely_cumpleanos_fotos';
 
-        // Inicializar con imágenes predefinidas
-        function inicializarGaleria() {
+        // ========================================
+        // FUNCIONES DE ALMACENAMIENTO
+        // ========================================
+        
+        // Guardar fotos en localStorage
+        function guardarFotosEnStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(fotosGaleria));
+                console.log('Fotos guardadas correctamente');
+            } catch (error) {
+                console.error('Error guardando fotos:', error);
+                alert('Error guardando las fotos. El navegador puede estar sin espacio.');
+            }
+        }
+
+        // Cargar fotos desde localStorage
+        function cargarFotosDesdeStorage() {
+            try {
+                const fotosGuardadas = localStorage.getItem(STORAGE_KEY);
+                if (fotosGuardadas) {
+                    fotosGaleria = JSON.parse(fotosGuardadas);
+                    console.log(`${fotosGaleria.length} fotos cargadas desde almacenamiento`);
+                } else {
+                    // Si no hay fotos guardadas, usar las predeterminadas
+                    inicializarFotosPredeterminadas();
+                }
+            } catch (error) {
+                console.error('Error cargando fotos:', error);
+                inicializarFotosPredeterminadas();
+            }
+        }
+
+        // Inicializar con fotos predeterminadas (solo primera vez)
+        function inicializarFotosPredeterminadas() {
             fotosGaleria = [
                 {
                     src: "imagensha1.jpg",
-                    titulo: "Nuestras aventuras prehistóricas juntas 🌋"
+                    titulo: "Nuestras aventuras prehistóricas juntas 🌋",
+                    fecha: new Date().toLocaleString('es-ES'),
+                    tipo: 'predeterminada'
                 },
                 {
                     src: "imagensha2.jpg",
-                    titulo: "Momentos jurásicos divertidos 🦕"
+                    titulo: "Momentos jurásicos divertidos 🦕",
+                    fecha: new Date().toLocaleString('es-ES'),
+                    tipo: 'predeterminada'
                 },
                 {
                     src: "imagensha3.jpg", 
-                    titulo: "Amigas por siempre como dinosaurios 🦖"
+                    titulo: "Amigas por siempre como dinosaurios 🦖",
+                    fecha: new Date().toLocaleString('es-ES'),
+                    tipo: 'predeterminada'
                 },
                 {
                     src: "imagensha4.jpg",
-                    titulo: "Recuerdos de la era de hielo ❄️"
+                    titulo: "Recuerdos de la era de hielo ❄️",
+                    fecha: new Date().toLocaleString('es-ES'),
+                    tipo: 'predeterminada'
                 },
                 {
                     src: "imagensha5.jpg",
-                    titulo: "¡Feliz cumpleaños prehistórico! 🥚"
+                    titulo: "¡Feliz cumpleaños prehistórico! 🥚",
+                    fecha: new Date().toLocaleString('es-ES'),
+                    tipo: 'predeterminada'
                 }
             ];
+            guardarFotosEnStorage();
         }
+
+        // Limpiar almacenamiento (función de utilidad)
+        function limpiarAlmacenamiento() {
+            if (confirm('¿Estás seguro de que quieres eliminar todas las fotos guardadas?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                inicializarFotosPredeterminadas();
+                cargarSlider();
+                alert('Almacenamiento limpiado. Se restauraron las fotos originales.');
+            }
+        }
+
+        // ========================================
+        // CONTROL DE MÚSICA (sin cambios)
+        // ========================================
+        let musicaReproduciendo = false;
+        const audio = document.getElementById('background-audio');
+        const musicBtn = document.getElementById('music-btn');
 
         function toggleMusic() {
             if (musicaReproduciendo) {
@@ -822,7 +882,6 @@
                 musicBtn.classList.add('playing');
             }).catch(error => {
                 console.log('Error al reproducir música:', error);
-                alert('⚠️ Para escuchar música, interactúa primero con la página');
             });
         }
 
@@ -833,19 +892,49 @@
             musicBtn.classList.remove('playing');
         }
 
-        // Inicializar música al cargar la página
-        window.addEventListener('load', function() {
-            inicializarGaleria();
-            audio.volume = 0.5;
-            
-            document.addEventListener('click', function iniciarMusica() {
-                if (!musicaReproduciendo) {
-                    reproducirMusica();
-                    document.removeEventListener('click', iniciarMusica);
+        // ========================================
+        // SISTEMA DE NOTIFICACIONES PUSH
+        // ========================================
+        let notificacionesPermitidas = false;
+
+        async function inicializarNotificaciones() {
+            if (!("Notification" in window)) {
+                console.log("Navegador no soporta notificaciones");
+                return;
+            }
+
+            if (Notification.permission === "granted") {
+                notificacionesPermitidas = true;
+            } else if (Notification.permission !== "denied") {
+                try {
+                    const permission = await Notification.requestPermission();
+                    notificacionesPermitidas = (permission === "granted");
+                } catch (error) {
+                    console.log("Error solicitando permisos:", error);
                 }
-            }, { once: true });
-        });
-        
+            }
+        }
+
+        function mostrarNotificacionPush(titulo, mensaje) {
+            if (!notificacionesPermitidas) return;
+
+            const notification = new Notification(titulo, {
+                body: mensaje,
+                icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦖</text></svg>",
+                tag: "album-karely"
+            });
+
+            notification.onclick = function() {
+                window.focus();
+                notification.close();
+            };
+
+            setTimeout(() => notification.close(), 5000);
+        }
+
+        // ========================================
+        // MENSAJES Y SORPRESAS (sin cambios)
+        // ========================================
         const mensajes = [
             "🦖 Sha dice: ¡Eres la mejor amiga del mundo jurásico, Karely! 🌋",
             "🦕 Sha dice: Espero que tu cumpleaños esté lleno de alegría prehistórica 🦴",
@@ -884,7 +973,9 @@
             popup.classList.remove("oculto");
         }
 
-        // === FUNCIONES DE LA GALERÍA DESLIZABLE ===
+        // ========================================
+        // FUNCIONES DE LA GALERÍA CON PERSISTENCIA
+        // ========================================
         
         function verRecuerdos() {
             const galeriaPopup = document.getElementById("galeria-popup");
@@ -906,12 +997,18 @@
             fotosGaleria.forEach((foto, index) => {
                 const slide = document.createElement("div");
                 slide.className = "slide";
+                
+                // Solo mostrar botón eliminar en fotos agregadas por usuario
+                const botonEliminar = foto.tipo !== 'predeterminada' ? 
+                    `<button class="delete-btn" onclick="eliminarFoto(${index})" title="Eliminar foto">×</button>` : '';
+                
                 slide.innerHTML = `
                     <img src="${foto.src}" alt="${foto.titulo}" loading="lazy">
                     <div class="slide-overlay">
                         <p>${foto.titulo}</p>
+                        <small>Agregada: ${foto.fecha}</small>
                     </div>
-                    <button class="delete-btn" onclick="eliminarFoto(${index})">×</button>
+                    ${botonEliminar}
                 `;
                 sliderWrapper.appendChild(slide);
                 
@@ -921,7 +1018,7 @@
                 indicators.appendChild(indicator);
             });
             
-            fotoActual = 0;
+            fotoActual = Math.min(fotoActual, fotosGaleria.length - 1);
             actualizarSlider();
         }
 
@@ -977,12 +1074,14 @@
             popup.classList.add("oculto");
         }
 
-        // Función para abrir el selector de archivos
+        // ========================================
+        // FUNCIONES PARA AGREGAR Y ELIMINAR FOTOS CON PERSISTENCIA
+        // ========================================
+        
         function agregarFotos() {
             document.getElementById('file-input').click();
         }
 
-        // Función para eliminar la foto actual
         function eliminarFotoActual() {
             if (fotosGaleria.length <= 1) {
                 alert("No puedes eliminar la última foto. Debe haber al menos una foto en la galería.");
@@ -994,28 +1093,44 @@
             }
         }
 
-        // Función para eliminar una foto específica
         function eliminarFoto(index) {
             if (fotosGaleria.length <= 1) {
-                alert("No puedes eliminar la última foto. Debe haber al menos una foto en la galería.");
+                alert("No puedes eliminar la última foto.");
                 return;
+            }
+            
+            // Verificar si es foto predeterminada
+            if (fotosGaleria[index].tipo === 'predeterminada') {
+                if (!confirm("Esta es una foto original. ¿Estás seguro de que quieres eliminarla?")) {
+                    return;
+                }
             }
             
             fotosGaleria.splice(index, 1);
             
-            // Ajustar el índice actual si es necesario
             if (fotoActual >= fotosGaleria.length) {
                 fotoActual = fotosGaleria.length - 1;
             }
             
-            // Recargar el slider
+            // Guardar cambios
+            guardarFotosEnStorage();
+            
+            // Notificar eliminación
+            mostrarNotificacionPush(
+                "🦕 Foto eliminada", 
+                "Se eliminó una foto del álbum de Karely"
+            );
+            
             cargarSlider();
         }
 
-        // Manejar la selección de archivos
+        // Event listener para agregar fotos con persistencia
         document.getElementById('file-input').addEventListener('change', function(e) {
             const files = e.target.files;
             if (!files.length) return;
+            
+            let fotosAgregadas = 0;
+            let totalFiles = Array.from(files).filter(file => file.type.match('image.*')).length;
             
             for (let i = 0; i < files.length; i++) {
                 const file = files[i];
@@ -1023,42 +1138,105 @@
                 
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    // Agregar la nueva foto al array
+                    // Agregar la nueva foto al array con metadatos
                     fotosGaleria.push({
-                        src: e.target.result,
-                        titulo: "Nuevo recuerdo agregado 🦴"
+                        src: e.target.result, // Base64 de la imagen
+                        titulo: "Nuevo recuerdo agregado 🦴",
+                        fecha: new Date().toLocaleString('es-ES'),
+                        tipo: 'agregada',
+                        tamaño: file.size
                     });
                     
-                    // Si la galería está abierta, recargarla
-                    if (!document.getElementById("galeria-popup").classList.contains("oculto")) {
-                        cargarSlider();
-                        // Ir a la última foto (la recién agregada)
-                        fotoActual = fotosGaleria.length - 1;
-                        actualizarSlider();
+                    fotosAgregadas++;
+                    
+                    // Cuando se procesen todas las fotos
+                    if (fotosAgregadas === totalFiles) {
+                        // Guardar en localStorage
+                        guardarFotosEnStorage();
+                        
+                        // Mostrar notificación
+                        setTimeout(() => {
+                            const titulo = totalFiles === 1 ? 
+                                "🦖 Nueva foto agregada" : 
+                                `🦖 ${totalFiles} fotos nuevas agregadas`;
+                            
+                            mostrarNotificacionPush(titulo, "Fotos guardadas permanentemente en el álbum");
+                        }, 500);
+                        
+                        // Recargar galería si está abierta
+                        if (!document.getElementById("galeria-popup").classList.contains("oculto")) {
+                            cargarSlider();
+                            fotoActual = fotosGaleria.length - 1;
+                            actualizarSlider();
+                        }
                     }
                 };
                 reader.readAsDataURL(file);
             }
             
-            // Resetear el input para permitir agregar las mismas imágenes otra vez
             this.value = '';
         });
 
-        // Cerrar popup al hacer clic fuera del contenido
+        // ========================================
+        // FUNCIONES DE UTILIDAD ADICIONALES
+        // ========================================
+        
+        // Mostrar información de almacenamiento
+        function mostrarInfoAlmacenamiento() {
+            const tamaño = new Blob([localStorage.getItem(STORAGE_KEY) || '']).size;
+            const mb = (tamaño / 1024 / 1024).toFixed(2);
+            alert(`Información del álbum:
+            - Total de fotos: ${fotosGaleria.length}
+            - Espacio usado: ${mb} MB
+            - Fotos predeterminadas: ${fotosGaleria.filter(f => f.tipo === 'predeterminada').length}
+            - Fotos agregadas: ${fotosGaleria.filter(f => f.tipo === 'agregada').length}`);
+        }
+
+        // Exportar fotos (opcional)
+        function exportarFotos() {
+            const fotosExportables = fotosGaleria.filter(f => f.tipo === 'agregada');
+            if (fotosExportables.length === 0) {
+                alert('No hay fotos nuevas para exportar');
+                return;
+            }
+            
+            console.log('Fotos exportables:', fotosExportables);
+            alert(`${fotosExportables.length} fotos listas para exportar (ver consola del navegador)`);
+        }
+
+        // ========================================
+        // EVENTOS Y INICIALIZACIÓN
+        // ========================================
+        
+        // Inicializar todo al cargar la página
+        window.addEventListener('load', function() {
+            // Cargar fotos desde almacenamiento
+            cargarFotosDesdeStorage();
+            
+            // Inicializar notificaciones
+            inicializarNotificaciones();
+            
+            // Configurar música
+            audio.volume = 0.5;
+            document.addEventListener('click', function iniciarMusica() {
+                if (!musicaReproduciendo) {
+                    reproducirMusica();
+                    document.removeEventListener('click', iniciarMusica);
+                }
+            }, { once: true });
+            
+            console.log('Álbum cargado con', fotosGaleria.length, 'fotos');
+        });
+
+        // Eventos de teclado y touch
         document.getElementById("popup").addEventListener("click", function(e) {
-            if (e.target === this) {
-                cerrarPopup();
-            }
+            if (e.target === this) cerrarPopup();
         });
 
-        // Cerrar galería al hacer clic fuera del contenido
         document.getElementById("galeria-popup").addEventListener("click", function(e) {
-            if (e.target === this) {
-                cerrarGaleria();
-            }
+            if (e.target === this) cerrarGaleria();
         });
 
-        // Cerrar popup con la tecla Escape
         document.addEventListener("keydown", function(e) {
             if (e.key === "Escape") {
                 cerrarPopup();
@@ -1070,7 +1248,7 @@
             }
         });
 
-        // Funcionalidad de deslizar con touch para móviles
+        // Touch events para móviles
         let startX = 0;
         let isDragging = false;
 
@@ -1100,151 +1278,5 @@
             }
         });
     </script>
-
-    <!-- Font Awesome para los iconos -->
-    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script
-    <!-- AGREGAR ESTE CÓDIGO ANTES DE </body> EN TU HTML -->
-<script>
-    // ========================================
-    // SISTEMA DE NOTIFICACIONES PUSH - SIMPLE
-    // ========================================
-    
-    let notificacionesPermitidas = false;
-    
-    // Solicitar permisos al cargar la página
-    async function inicializarNotificaciones() {
-        if (!("Notification" in window)) {
-            console.log("Navegador no soporta notificaciones");
-            return;
-        }
-        
-        if (Notification.permission === "granted") {
-            notificacionesPermitidas = true;
-        } else if (Notification.permission !== "denied") {
-            try {
-                const permission = await Notification.requestPermission();
-                notificacionesPermitidas = (permission === "granted");
-            } catch (error) {
-                console.log("Error solicitando permisos:", error);
-            }
-        }
-    }
-    
-    // Función principal para mostrar notificación
-    function mostrarNotificacionPush(titulo, mensaje) {
-        if (!notificacionesPermitidas) {
-            console.log("Sin permisos para notificaciones");
-            return;
-        }
-        
-        const notification = new Notification(titulo, {
-            body: mensaje,
-            icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦖</text></svg>",
-            tag: "album-karely",
-            requireInteraction: false
-        });
-        
-        // Hacer que la notificación enfoque la ventana al hacer clic
-        notification.onclick = function() {
-            window.focus();
-            notification.close();
-        };
-        
-        // Auto-cerrar después de 5 segundos
-        setTimeout(() => {
-            notification.close();
-        }, 5000);
-    }
-    
-    // ========================================
-    // MODIFICAR TU EVENT LISTENER EXISTENTE
-    // ========================================
-    
-    // Reemplazar tu event listener del file input por este:
-    document.getElementById('file-input').addEventListener('change', function(e) {
-        const files = e.target.files;
-        if (!files.length) return;
-        
-        let fotosAgregadas = 0;
-        let totalFiles = Array.from(files).filter(file => file.type.match('image.*')).length;
-        
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            if (!file.type.match('image.*')) continue;
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                // Agregar la nueva foto al array
-                fotosGaleria.push({
-                    src: e.target.result,
-                    titulo: "Nuevo recuerdo agregado 🦴",
-                    fecha: new Date().toLocaleString('es-ES')
-                });
-                
-                fotosAgregadas++;
-                
-                // MOSTRAR NOTIFICACIÓN CUANDO SE PROCESEN TODAS LAS FOTOS
-                if (fotosAgregadas === totalFiles) {
-                    setTimeout(() => {
-                        const titulo = totalFiles === 1 ?
-                            "🦖 Nueva foto agregada" :
-                            `🦖 ${totalFiles} fotos nuevas agregadas`;
-                        
-                        const mensaje = "Se agregaron nuevas fotos al álbum de cumpleaños de Karely";
-                        
-                        mostrarNotificacionPush(titulo, mensaje);
-                    }, 500);
-                }
-                
-                // Si la galería está abierta, recargarla
-                if (!document.getElementById("galeria-popup").classList.contains("oculto")) {
-                    cargarSlider();
-                    fotoActual = fotosGaleria.length - 1;
-                    actualizarSlider();
-                }
-            };
-            reader.readAsDataURL(file);
-        }
-        
-        this.value = '';
-    });
-    
-    // ========================================
-    // NOTIFICACIÓN AL ELIMINAR FOTOS (OPCIONAL)
-    // ========================================
-    
-    // Modificar tu función eliminarFoto existente para incluir notificación:
-    function eliminarFotoConNotificacion(index) {
-        if (fotosGaleria.length <= 1) {
-            alert("No puedes eliminar la última foto. Debe haber al menos una foto en la galería.");
-            return;
-        }
-        
-        fotosGaleria.splice(index, 1);
-        
-        if (fotoActual >= fotosGaleria.length) {
-            fotoActual = fotosGaleria.length - 1;
-        }
-        
-        // Mostrar notificación de eliminación
-        mostrarNotificacionPush(
-            "🦕 Foto eliminada",
-            "Se eliminó una foto del álbum de Karely"
-        );
-        
-        cargarSlider();
-    }
-    
-    // ========================================
-    // INICIALIZAR AL CARGAR LA PÁGINA
-    // ========================================
-    
-    window.addEventListener('load', function() {
-        // Inicializar sistema de notificaciones
-        inicializarNotificaciones();
-        
-        console.log('Sistema de notificaciones push cargado');
-    });
-</script>
 </body>
-</html>
+        </html>
